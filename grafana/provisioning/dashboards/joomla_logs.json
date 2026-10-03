@@ -1,0 +1,98 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Extensiones instaladas en Joomla",
+      "type": "barchart",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "PostgreSQL-Joomla"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "PostgreSQL-Joomla"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "SELECT type AS tipo, COUNT(*) AS cantidad FROM fl3x2_extensions GROUP BY type ORDER BY cantidad DESC;",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "xTickLabelRotation": 0,
+        "xTickLabelMaxLength": 0,
+        "showValue": "auto",
+        "groupWidth": 0.7,
+        "barWidthFactor": 0.6,
+        "barRadius": 0
+      }
+    },
+    {
+      "id": 2,
+      "title": "Usuarios por grupo de Joomla",
+      "type": "barchart",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "PostgreSQL-Joomla"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "PostgreSQL-Joomla"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "SELECT ug.title AS grupo, COUNT(u.id) AS usuarios FROM fl3x2_usergroups ug LEFT JOIN fl3x2_user_usergroup_map uum ON ug.id = uum.group_id LEFT JOIN fl3x2_users u ON u.id = uum.user_id GROUP BY ug.id, ug.title ORDER BY usuarios DESC;",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "xTickLabelRotation": 0,
+        "xTickLabelMaxLength": 0,
+        "showValue": "auto",
+        "groupWidth": 0.7,
+        "barWidthFactor": 0.6,
+        "barRadius": 0
+      }
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "joomla",
+    "postgres"
+  ],
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "title": "Panel de Monitoreo Joomla & Postgres",
+  "uid": "joomla-postgres-dash"
+}

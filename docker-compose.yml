@@ -1,0 +1,94 @@
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: database
+    restart: always
+    environment:
+      POSTGRES_DB: ${JOOMLA_DB_NAME:-joomladb}
+      POSTGRES_USER: ${JOOMLA_DB_USER:-joomlauser}
+      POSTGRES_PASSWORD: ${JOOMLA_DB_PASSWORD:-joomlapassword}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${JOOMLA_DB_USER:-joomlauser} -d ${JOOMLA_DB_NAME:-joomladb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend_net
+
+  joomla:
+    image: joomla:latest
+    container_name: joomla
+    restart: always
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      JOOMLA_DB_HOST: database
+      JOOMLA_DB_USER: ${JOOMLA_DB_USER:-joomlauser}
+      JOOMLA_DB_PASSWORD: ${JOOMLA_DB_PASSWORD:-joomlapassword}
+      JOOMLA_DB_NAME: ${JOOMLA_DB_NAME:-joomladb}
+      JOOMLA_DB_TYPE: pgsql
+    volumes:
+      - joomla_data:/var/www/html
+      - ./joomla_logs:/var/log/apache2
+      - ./configuration.php:/var/www/html/configuration.php
+    networks:
+      - frontend_net
+      - backend_net
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - joomla
+      - jupyter
+      - grafana
+    networks:
+      - frontend_net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    environment:
+      GF_SERVER_ROOT_URL: http://localhost/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - frontend_net
+      - backend_net
+
+  jupyter:
+      image: jupyter/base-notebook:latest
+      container_name: jupyter
+      restart: always
+      command: >
+        bash -c "pip install --no-cache-dir -r /home/jovyan/requirements.txt &&
+        start-notebook.sh --NotebookApp.token='' --ServerApp.base_url=/jupyter/"
+      volumes:
+        - ./jupyter/notebooks:/home/jovyan/work
+        - ./jupyter/requirements.txt:/home/jovyan/requirements.txt:ro
+      networks:
+        - frontend_net
+        - backend_net
+
+volumes:
+  postgres_data:
+  joomla_data:
+  grafana_data:
+
+networks:
+  frontend_net:
+    driver: bridge
+  backend_net:
+    driver: bridge
